@@ -7,6 +7,10 @@
 <script src="https://js.jotform.com/JotFormCustomWidget.min.js"></script>
 <style>
   * { box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    max-width: 100%;
+  }
   body {
     font-family: -apple-system, "Segoe UI", Arial, sans-serif;
     font-size: 14px;
@@ -35,7 +39,7 @@
     position: absolute;
     top: 100%;
     left: 0;
-    right: 116px;
+    right: 0;
     background: #fff;
     border: 1px solid #ccc;
     border-top: none;
@@ -161,7 +165,10 @@ function actualizarVisibilidad() {
 function redimensionar() {
   if (window.JFCustomWidget) {
     // margen extra para que no se corten los bordes ni la lista de sugerencias
-    JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight + 20 });
+    JFCustomWidget.requestFrameResize({
+      height: document.body.scrollHeight + 20,
+      width: "100%",
+    });
   }
 }
 
