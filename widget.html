@@ -308,7 +308,9 @@ document.getElementById("ciudad").onchange = () => {
 
 document.getElementById("add-row").onclick = crearFila;
 
-if (window.JFCustomWidget) {
+const dentroDeIframe = window.self !== window.top;
+
+if (window.JFCustomWidget && dentroDeIframe) {
   JFCustomWidget.subscribe("ready", function () {
     cargarCatalogo().catch(err => {
       document.getElementById("estado-carga").textContent =
