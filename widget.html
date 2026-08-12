@@ -145,6 +145,7 @@ async function cargarCatalogo() {
   catalogoListo = true;
   document.getElementById("estado-carga").style.display = "none";
   actualizarVisibilidad();
+  redimensionar();
 }
 
 function actualizarVisibilidad() {
@@ -152,6 +153,14 @@ function actualizarVisibilidad() {
   document.getElementById("aviso-ciudad").style.display = ciudad ? "none" : "block";
   document.getElementById("add-row").style.display = ciudad ? "inline-block" : "none";
   document.getElementById("filas").style.display = ciudad ? "block" : "none";
+  redimensionar();
+}
+
+function redimensionar() {
+  if (window.JFCustomWidget) {
+    // margen extra para que no se corten los bordes ni la lista de sugerencias
+    JFCustomWidget.requestFrameResize({ height: document.body.scrollHeight + 20 });
+  }
 }
 
 function textoOpcion(o) {
@@ -193,6 +202,7 @@ function renderFilas() {
   if (filasState.length === 0) crearFila(); // siempre al menos una fila visible
   enganchar();
   enviarEstado();
+  redimensionar();
 }
 
 function opcionesDeLaCiudad() {
@@ -227,17 +237,20 @@ function enganchar() {
           cont.innerHTML = "";
           validarFila(id);
           enviarEstado();
+          redimensionar();
         };
         cont.appendChild(d);
       });
       validarFila(id);
       enviarEstado();
+      redimensionar();
     };
     input.onblur = () => {
       // pequeño delay para que el click en una sugerencia registre antes de cerrar la lista
       setTimeout(() => {
         const cont = document.querySelector(`.sugerencias[data-id="${input.dataset.id}"]`);
         if (cont) cont.innerHTML = "";
+        redimensionar();
       }, 150);
     };
   });
@@ -248,6 +261,7 @@ function enganchar() {
       fila.cantidad = parseInt(input.value, 10) || 0;
       validarFila(input.dataset.id);
       enviarEstado();
+      redimensionar();
     };
   });
 
