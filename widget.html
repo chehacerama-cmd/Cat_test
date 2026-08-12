@@ -81,6 +81,7 @@
 
   <div id="filas"></div>
   <button type="button" id="add-row" style="display:none;">+ Añadir producto</button>
+  <div id="total-pedido" style="display:none; margin-top:12px; font-weight:600; text-align:right;"></div>
 
 <script>
 // ============ CONFIGURACIÓN — EDITA ESTOS DOS VALORES ============
@@ -124,6 +125,7 @@ async function cargarCatalogo() {
         linea: l.Linea,
         codigo: l.Codigo,
         nombre: prod ? prod.Nombre : "(producto no encontrado)",
+        precio: prod ? (parseFloat(prod.Precio) || 0) : 0,
         almacen: l.Almacen,
         lote: l.Lote,
         stock: parseFloat(l.Stock_Lote) || 0,
@@ -166,7 +168,8 @@ function redimensionar() {
 function textoOpcion(o) {
   const avisoStock = o.stock <= 5 ? ` ⚠ quedan ${o.stock}` : ` — ${o.stock} uds`;
   const cad = o.caducidad ? ` — cad. ${o.caducidad}` : "";
-  return `${o.nombre} (${o.linea}) — Lote ${o.lote}${avisoStock}${cad}`;
+  const precio = ` — ${o.precio.toFixed(2)}€/ud`;
+  return `${o.nombre} (${o.linea}) — Lote ${o.lote}${avisoStock}${precio}${cad}`;
 }
 
 function crearFila() {
@@ -196,6 +199,9 @@ function renderFilas() {
              placeholder="Cant." value="${fila.cantidad || ""}">
       <button type="button" class="quitar" data-id="${fila.id}" title="Quitar">✕</button>
       <div class="error" data-id="${fila.id}"></div>
+      <div class="subtotal" data-id="${fila.id}" style="grid-column:1 / span 3; font-size:12px; color:#555;">
+        ${fila.seleccion && fila.cantidad > 0 ? `Subtotal: ${(fila.seleccion.precio * fila.cantidad).toFixed(2)}€` : ""}
+      </div>
     `;
     cont.appendChild(div);
   });
@@ -236,6 +242,7 @@ function enganchar() {
           input.value = textoOpcion(o);
           cont.innerHTML = "";
           validarFila(id);
+          actualizarSubtotal(id);
           enviarEstado();
           redimensionar();
         };
@@ -260,6 +267,7 @@ function enganchar() {
       const fila = filasState.find(f => f.id === input.dataset.id);
       fila.cantidad = parseInt(input.value, 10) || 0;
       validarFila(input.dataset.id);
+      actualizarSubtotal(input.dataset.id);
       enviarEstado();
       redimensionar();
     };
@@ -287,6 +295,16 @@ function validarFila(id) {
   }
 }
 
+function actualizarSubtotal(id) {
+  const fila = filasState.find(f => f.id === id);
+  const subEl = document.querySelector(`.subtotal[data-id="${id}"]`);
+  if (!subEl) return;
+  subEl.textContent =
+    fila.seleccion && fila.cantidad > 0
+      ? `Subtotal: ${(fila.seleccion.precio * fila.cantidad).toFixed(2)}€`
+      : "";
+}
+
 function formularioValido() {
   const ciudad = document.getElementById("ciudad").value;
   const filasConDatos = filasState.filter(f => f.seleccion || f.cantidad);
@@ -296,18 +314,28 @@ function formularioValido() {
 
 function enviarEstado() {
   const ciudad = document.getElementById("ciudad").value;
+  const filasConDatos = filasState.filter(f => f.seleccion && f.cantidad > 0);
+
+  const total = filasConDatos.reduce((suma, f) => suma + f.seleccion.precio * f.cantidad, 0);
+  const totalEl = document.getElementById("total-pedido");
+  if (filasConDatos.length > 0) {
+    totalEl.style.display = "block";
+    totalEl.textContent = `Total del pedido: ${total.toFixed(2)}€`;
+  } else {
+    totalEl.style.display = "none";
+  }
+
   const pedido = {
     ciudad,
-    lineas: filasState
-      .filter(f => f.seleccion && f.cantidad > 0)
-      .map(f => ({
-        linea: f.seleccion.linea,
-        codigo: f.seleccion.codigo,
-        nombre: f.seleccion.nombre,
-        almacen: f.seleccion.almacen,
-        lote: f.seleccion.lote,
-        cantidad: f.cantidad,
-      })),
+    lineas: filasConDatos.map(f => ({
+      linea: f.seleccion.linea,
+      codigo: f.seleccion.codigo,
+      nombre: f.seleccion.nombre,
+      almacen: f.seleccion.almacen,
+      lote: f.seleccion.lote,
+      cantidad: f.cantidad,
+      precio: f.seleccion.precio,
+    })),
   };
   if (window.JFCustomWidget) {
     JFCustomWidget.sendData({ value: JSON.stringify(pedido), valid: formularioValido() });
